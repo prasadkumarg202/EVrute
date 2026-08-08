@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-62 -62 636 636" role="img" aria-label="EVRute">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12b76a"/>
+      <stop offset="1" stop-color="#046c4e"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <!-- Route: a road curving away, with the charge bolt as the destination -->
+  <path d="M150 402c0-64 46-84 106-84s106-20 106-84"
+        fill="none" stroke="#ffffff" stroke-opacity=".38"
+        stroke-width="26" stroke-linecap="round"/>
+  <path d="M286 96 168 286h74l-26 130 122-196h-74z" fill="#fff"/>
+</svg>

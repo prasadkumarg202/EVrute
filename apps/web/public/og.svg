@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f14"/><stop offset="1" stop-color="#0d2a1f"/>
+    </linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12b76a"/><stop offset="1" stop-color="#046c4e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(88,150)">
+    <rect width="132" height="132" rx="30" fill="url(#b)"/>
+    <path d="M79 22 48 71h19l-7 34 32-51H73z" fill="#fff" transform="translate(0,0) scale(1.0)"/>
+  </g>
+  <text x="252" y="238" font-family="Inter,system-ui,sans-serif" font-size="76" font-weight="700" fill="#ffffff">EVRute</text>
+  <text x="252" y="300" font-family="Inter,system-ui,sans-serif" font-size="34" fill="#a9b4c0">EV charging across India</text>
+  <g font-family="Inter,system-ui,sans-serif" font-size="27" fill="#d7dee6">
+    <text x="88" y="418">Live connector availability</text>
+    <text x="88" y="466">One-tap start and stop</text>
+    <text x="88" y="514">One wallet for every station</text>
+  </g>
+  <circle cx="70" cy="410" r="7" fill="#12b76a"/><circle cx="70" cy="458" r="7" fill="#12b76a"/><circle cx="70" cy="506" r="7" fill="#12b76a"/>
+</svg>
