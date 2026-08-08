@@ -103,8 +103,8 @@ async function DashboardContent() {
             title="Platform revenue and sessions over the last 7 days"
             data={chartData}
             series={[
-              { key: 'revenue', label: 'Revenue', color: 'var(--color-brand-500)', formatValue: (v) => formatINR(v, true) },
-              { key: 'sessions', label: 'Sessions', color: 'var(--color-info-500)', formatValue: (v) => String(v) },
+              { key: 'revenue', label: 'Revenue', color: 'var(--color-brand-500)', format: 'currency' },
+              { key: 'sessions', label: 'Sessions', color: 'var(--color-info-500)' },
             ]}
           />
         </CardBody>

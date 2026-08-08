@@ -110,8 +110,8 @@ async function DashboardContent() {
             title="Revenue and energy delivered over the last 7 days"
             data={chartData}
             series={[
-              { key: 'revenue', label: 'Revenue', color: 'var(--color-brand-500)', formatValue: (v) => formatINR(v, true) },
-              { key: 'energy_kwh', label: 'Energy', color: 'var(--color-info-500)', formatValue: (v) => formatKwh(v, 0) },
+              { key: 'revenue', label: 'Revenue', color: 'var(--color-brand-500)', format: 'currency' },
+              { key: 'energy_kwh', label: 'Energy', color: 'var(--color-info-500)', format: 'energy' },
             ]}
           />
         </CardBody>

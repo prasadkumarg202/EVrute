@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { defaultLandingFor } from '@/lib/auth/landing';
 import { useEffect, useState } from 'react';
 import { Button, Field } from '@/components/ui/index';
 import { useToast } from '@/components/ui/toast';
@@ -10,7 +11,13 @@ import { cn } from '@/lib/utils/cn';
 type Method = 'phone' | 'email';
 type EmailMode = 'signin' | 'signup';
 
-export function LoginClient({ next, forbidden }: { readonly next: string; readonly forbidden: boolean }) {
+export function LoginClient({
+  next,
+  forbidden,
+}: {
+  readonly next: string | null;
+  readonly forbidden: boolean;
+}) {
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const toast = useToast();
@@ -44,8 +51,35 @@ export function LoginClient({ next, forbidden }: { readonly next: string; readon
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function goNext() {
-    router.replace(next);
+  /**
+   * Route after a successful sign-in.
+   *
+   * An explicit `?next=` always wins — it means the user was deep-linking to
+   * a page and got bounced through login. Otherwise land them on the surface
+   * their role actually uses: an owner on /owner, staff on /admin.
+   */
+  async function goNext() {
+    if (next) {
+      router.replace(next);
+      router.refresh();
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let destination = '/';
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      destination = defaultLandingFor(profile?.role ?? null);
+    }
+
+    router.replace(destination);
     router.refresh();
   }
 
@@ -74,7 +108,7 @@ export function LoginClient({ next, forbidden }: { readonly next: string; readon
       setPhoneError(error.message);
       return;
     }
-    goNext();
+    void goNext();
   }
 
   async function handleEmailSubmit() {
@@ -97,7 +131,7 @@ export function LoginClient({ next, forbidden }: { readonly next: string; readon
         setSignupSent(true);
         return;
       }
-      goNext();
+      void goNext();
       return;
     }
 
@@ -107,12 +141,16 @@ export function LoginClient({ next, forbidden }: { readonly next: string; readon
       setEmailError(error.message);
       return;
     }
-    goNext();
+    void goNext();
   }
 
   async function handleGoogle() {
     setGoogleBusy(true);
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    // Omit `next` entirely when the user didn't ask for a page — the
+    // callback then routes by role rather than defaulting to the map.
+    const redirectTo = next
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+      : `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) {
       setGoogleBusy(false);

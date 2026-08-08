@@ -70,3 +70,13 @@ export function toDateInputValue(date: Date): string {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+/** First letters of the first two words, e.g. "Ananya Rao" -> "AR". */
+export function initialsFrom(name: string, fallback: string): string {
+  const source = name.trim() || fallback.trim();
+  if (!source) return '?';
+  const parts = source.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? '';
+  const second = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : '';
+  return (first + second).toUpperCase() || source[0]!.toUpperCase();
+}

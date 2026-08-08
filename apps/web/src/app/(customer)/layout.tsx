@@ -1,27 +1,21 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { BottomTabs, isFullScreenRoute } from '@/components/nav/bottom-tabs';
-import { cn } from '@/lib/utils/cn';
+import { CustomerShell } from '@/components/nav/customer-shell';
+import { initialsFrom } from '@/lib/utils/format';
+import { getSessionUser } from '@/lib/supabase/server';
 
 /**
- * Shared shell for the customer surface: bottom tab bar on every screen
- * except the ones that need the full viewport (station detail, live
- * session) — see `isFullScreenRoute`. Kept as a client component because
- * the show/hide decision depends on the current path and must not flash
- * the tab bar in on a full-screen route before hydration.
+ * Customer shell. A Server Component so it can read the signed-in profile
+ * for the account avatar without a client-side round trip on every
+ * navigation; the show/hide logic lives in the client child.
  */
-export default function CustomerLayout({ children }: { readonly children: ReactNode }) {
-  const pathname = usePathname();
-  const showTabBar = !isFullScreenRoute(pathname);
+export default async function CustomerLayout({ children }: { readonly children: ReactNode }) {
+  const user = await getSessionUser();
 
   return (
-    <div className="min-h-dvh bg-[var(--surface-page)]">
-      <div className={cn(showTabBar && 'pb-[calc(3.75rem+env(safe-area-inset-bottom,0px))]')}>
-        {children}
-      </div>
-      {showTabBar && <BottomTabs />}
-    </div>
+    <CustomerShell
+      {...(user ? { initials: initialsFrom(user.fullName, user.email ?? user.phone ?? '') } : {})}
+    >
+      {children}
+    </CustomerShell>
   );
 }

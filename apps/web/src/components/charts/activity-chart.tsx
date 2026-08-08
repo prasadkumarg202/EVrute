@@ -19,13 +19,20 @@ import {
   type TooltipProps,
 } from 'recharts';
 import { formatDate } from '@/lib/utils/format';
+import { formatINR, formatKwh } from '@evrute/core';
+
+function formatSeriesValue(value: number, format?: 'currency' | 'energy') {
+  if (format === 'currency') return formatINR(value, true);
+  if (format === 'energy') return formatKwh(value, 0);
+  return String(value);
+}
 
 export interface ActivityChartSeries {
   readonly key: string;
   readonly label: string;
   /** CSS colour value, e.g. `var(--color-brand-500)`. */
   readonly color: string;
-  readonly formatValue?: (value: number) => string;
+  readonly format?: 'currency' | 'energy';
 }
 
 export interface ActivityChartDatum {
@@ -58,7 +65,7 @@ function ChartTooltip({
           <p key={s.key} className="flex items-center gap-1.5 text-[var(--text-secondary)]">
             <span aria-hidden="true" className="inline-block size-2 rounded-full" style={{ backgroundColor: s.color }} />
             {s.label}: <span className="tabular font-medium text-[var(--text-primary)]">
-              {s.formatValue ? s.formatValue(entry.value) : entry.value}
+              {formatSeriesValue(entry.value, s.format)}
             </span>
           </p>
         );
@@ -125,7 +132,7 @@ export function ActivityChart({ title, data, series, height = 260 }: ActivityCha
               <th scope="row">{formatDate(d.day)}</th>
               {series.map((s) => {
                 const value = Number(d[s.key] ?? 0);
-                return <td key={s.key}>{s.formatValue ? s.formatValue(value) : value}</td>;
+                return <td key={s.key}>{formatSeriesValue(value, s.format)}</td>;
               })}
             </tr>
           ))}

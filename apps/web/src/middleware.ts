@@ -93,10 +93,33 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Signed-in users have no business on the login screen.
+  // Signed-in users have no business on the login screen. Send them to the
+  // page they asked for, or — failing that — to the surface their role uses.
+  // Landing an owner on the driver's map with no visible route to their
+  // dashboard reads as the app being broken for them.
   if (pathname === '/login' && user) {
+    const requested = request.nextUrl.searchParams.get('next');
+    const safe = requested && requested.startsWith('/') && !requested.startsWith('//')
+      ? requested
+      : null;
+
+    let destination = safe;
+    if (!destination) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      destination =
+        profile?.role === 'owner'
+          ? '/owner'
+          : profile?.role === 'admin' || profile?.role === 'employee'
+            ? '/admin'
+            : '/';
+    }
+
     const url = request.nextUrl.clone();
-    url.pathname = request.nextUrl.searchParams.get('next') ?? '/';
+    url.pathname = destination;
     url.search = '';
     return NextResponse.redirect(url);
   }
