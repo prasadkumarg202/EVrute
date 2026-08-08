@@ -38,27 +38,45 @@ export function StationCard({ station }: { readonly station: StationSearchRow })
           )}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[var(--text-secondary)]">
-          <span className="tabular">
-            {station.min_price_per_kwh != null
-              ? `${formatINR(station.min_price_per_kwh)}/kWh`
-              : 'Pricing unavailable'}
-          </span>
-          {station.max_power_kw != null && (
-            <span className="tabular">Up to {Number(station.max_power_kw).toFixed(0)} kW</span>
-          )}
-          <span className="tabular inline-flex items-center gap-1">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5 text-warning-500" aria-hidden="true">
-              <path d="M10 1.5 12.6 7l6 .9-4.3 4.2 1 6-5.3-2.8L4.7 18l1-6L1.4 7.9l6-.9L10 1.5Z" />
-            </svg>
-            {station.rating_count > 0 ? station.rating_avg.toFixed(1) : 'New'}
-            {station.rating_count > 0 && <span className="text-[var(--text-muted)]">({station.rating_count})</span>}
-          </span>
-        </div>
+        {station.is_operable ? (
+          <>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[var(--text-secondary)]">
+              <span className="tabular">
+                {station.min_price_per_kwh != null
+                  ? `${formatINR(station.min_price_per_kwh)}/kWh`
+                  : 'Pricing unavailable'}
+              </span>
+              {station.max_power_kw != null && (
+                <span className="tabular">Up to {Number(station.max_power_kw).toFixed(0)} kW</span>
+              )}
+              <span className="tabular inline-flex items-center gap-1">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5 text-warning-500" aria-hidden="true">
+                  <path d="M10 1.5 12.6 7l6 .9-4.3 4.2 1 6-5.3-2.8L4.7 18l1-6L1.4 7.9l6-.9L10 1.5Z" />
+                </svg>
+                {station.rating_count > 0 ? station.rating_avg.toFixed(1) : 'New'}
+                {station.rating_count > 0 && <span className="text-[var(--text-muted)]">({station.rating_count})</span>}
+              </span>
+            </div>
 
-        <div className="mt-2.5">
-          <Badge tone={availability.tone}>{availability.label}</Badge>
-        </div>
+            <div className="mt-2.5">
+              <Badge tone={availability.tone}>{availability.label}</Badge>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mt-3 text-xs text-[var(--text-secondary)]">Availability not published</div>
+
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              {station.network && <Badge tone="neutral" dot={false}>{station.network}</Badge>}
+              <Badge
+                tone="neutral"
+                srHint="This station is listed for discovery only. It is operated by another network and cannot be started from EVRute."
+              >
+                Info only
+              </Badge>
+            </div>
+          </>
+        )}
       </Link>
     </Card>
   );

@@ -76,7 +76,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     return unexpectedError('cron.settlements.stations', stationsError);
   }
 
-  const ownerIds = [...new Set((stationRows ?? []).map((row) => row.owner_id))];
+  // stations.owner_id is nullable since imported (non-EVRute) stations have
+  // no owner; sessions only ever exist against owner-operated stations, but
+  // the type no longer guarantees that, so drop any null defensively.
+  const ownerIds = [
+    ...new Set(
+      (stationRows ?? [])
+        .map((row) => row.owner_id)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
   const results: SettlementResult[] = [];
 
   for (const ownerId of ownerIds) {

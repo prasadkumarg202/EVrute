@@ -1291,15 +1291,19 @@ export type Database = {
           commission_pct: number
           country_code: string
           created_at: string
+          data_attribution: string | null
           description: string | null
           geo: unknown
           id: string
           is_24x7: boolean
+          is_operable: boolean
+          last_synced_at: string | null
           lat: number
           lng: number
           name: string
+          network: string | null
           open_time: string | null
-          owner_id: string
+          owner_id: string | null
           photos: string[]
           postal_code: string | null
           provider_station_id: string | null
@@ -1307,6 +1311,8 @@ export type Database = {
           rating_count: number
           settlement_cycle_days: number
           slug: string
+          source: Database["public"]["Enums"]["station_source"]
+          source_url: string | null
           state: string
           status: Database["public"]["Enums"]["station_status"]
           updated_at: string
@@ -1320,15 +1326,19 @@ export type Database = {
           commission_pct?: number
           country_code?: string
           created_at?: string
+          data_attribution?: string | null
           description?: string | null
           geo?: unknown
           id?: string
           is_24x7?: boolean
+          is_operable?: never
+          last_synced_at?: string | null
           lat: number
           lng: number
           name: string
+          network?: string | null
           open_time?: string | null
-          owner_id: string
+          owner_id?: string | null
           photos?: string[]
           postal_code?: string | null
           provider_station_id?: string | null
@@ -1336,6 +1346,8 @@ export type Database = {
           rating_count?: number
           settlement_cycle_days?: number
           slug: string
+          source?: Database["public"]["Enums"]["station_source"]
+          source_url?: string | null
           state: string
           status?: Database["public"]["Enums"]["station_status"]
           updated_at?: string
@@ -1349,15 +1361,19 @@ export type Database = {
           commission_pct?: number
           country_code?: string
           created_at?: string
+          data_attribution?: string | null
           description?: string | null
           geo?: unknown
           id?: string
           is_24x7?: boolean
+          is_operable?: never
+          last_synced_at?: string | null
           lat?: number
           lng?: number
           name?: string
+          network?: string | null
           open_time?: string | null
-          owner_id?: string
+          owner_id?: string | null
           photos?: string[]
           postal_code?: string | null
           provider_station_id?: string | null
@@ -1365,6 +1381,8 @@ export type Database = {
           rating_count?: number
           settlement_cycle_days?: number
           slug?: string
+          source?: Database["public"]["Enums"]["station_source"]
+          source_url?: string | null
           state?: string
           status?: Database["public"]["Enums"]["station_status"]
           updated_at?: string
@@ -2226,6 +2244,7 @@ export type Database = {
           p_min_power_kw?: number
           p_offset?: number
           p_only_available?: boolean
+          p_only_operable?: boolean
           p_query?: string
           p_radius_m?: number
         }
@@ -2238,15 +2257,18 @@ export type Database = {
           distance_m: number
           id: string
           is_24x7: boolean
+          is_operable: boolean
           lat: number
           lng: number
           max_power_kw: number
           min_price_per_kwh: number
           name: string
+          network: string | null
           photos: string[]
           rating_avg: number
           rating_count: number
           slug: string
+          source: Database["public"]["Enums"]["station_source"]
           state: string
           total_connectors: number
         }[]
@@ -2411,6 +2433,12 @@ export type Database = {
         | "processing"
         | "paid"
         | "failed"
+      station_source:
+        | "evrute"
+        | "openchargemap"
+        | "openstreetmap"
+        | "government"
+        | "manual"
       station_status:
         | "draft"
         | "under_review"
@@ -2606,6 +2634,13 @@ export const Constants = {
         "processing",
         "paid",
         "failed",
+      ],
+      station_source: [
+        "evrute",
+        "openchargemap",
+        "openstreetmap",
+        "government",
+        "manual",
       ],
       station_status: [
         "draft",

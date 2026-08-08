@@ -276,7 +276,13 @@ async function handleFaultDetected(admin: AdminClient, event: ProviderWebhookEve
     .eq('role', 'admin');
   if (adminsError) throw new Error(`admin lookup for fault notification failed: ${adminsError.message}`);
 
-  const recipientIds = new Set<string>([station.owner_id, ...(admins ?? []).map((a) => a.id)]);
+  // stations.owner_id is nullable since imported (non-EVRute) stations have
+  // no owner; a charger fault only ever fires for an owner-operated station,
+  // but the type no longer guarantees that, so drop it defensively if null.
+  const recipientIds = new Set<string>([
+    ...(station.owner_id ? [station.owner_id] : []),
+    ...(admins ?? []).map((a) => a.id),
+  ]);
   const body =
     event.message ?? `Charger reported a fault${event.errorCode ? ` (${event.errorCode})` : ''}.`;
 

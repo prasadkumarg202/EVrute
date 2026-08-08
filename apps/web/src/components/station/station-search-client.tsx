@@ -21,7 +21,26 @@ interface Props {
   readonly initialCenter: LatLng;
 }
 
-type LocateState = 'idle' | 'locating' | 'located' | 'denied' | 'unsupported';
+type LocateState =
+  | 'idle'
+  | 'locating'
+  | 'located'
+  | 'denied'      // user (or browser policy) refused
+  | 'unavailable' // device could not get a fix
+  | 'timeout'     // took too long
+  | 'insecure'    // not a secure context
+  | 'unsupported';
+
+const LOCATE_MESSAGES: Record<Exclude<LocateState, 'idle' | 'locating' | 'located'>, string> = {
+  denied:
+    'Location is blocked for this site. Click the padlock in the address bar → Location → Allow, then try again.',
+  unavailable:
+    'Your device could not determine a position. On a desktop without GPS this is common — search by area name instead.',
+  timeout: 'Locating took too long. Try again, or search by area name.',
+  insecure:
+    'Location needs a secure connection (https:// or localhost). Open the site over HTTPS to use it.',
+  unsupported: 'This browser does not support location. Search by area name instead.',
+};
 
 export function StationSearchClient({ initialStations, initialCenter }: Props) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -30,6 +49,7 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
   const [locateState, setLocateState] = useState<LocateState>('idle');
   const [connectorTypes, setConnectorTypes] = useState<readonly ConnectorType[]>([]);
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [onlyOperable, setOnlyOperable] = useState(false);
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
   const [stations, setStations] = useState<readonly StationSearchRow[]>(initialStations);
@@ -52,6 +72,7 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
         p_lng: origin.lng,
         p_radius_m: SEARCH_RADIUS_M,
         p_only_available: onlyAvailable,
+        p_only_operable: onlyOperable,
         p_limit: 60,
         p_offset: 0,
         ...(connectorTypes.length > 0 ? { p_connector_types: [...connectorTypes] } : {}),
@@ -66,7 +87,7 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
       setStations(data ?? []);
       setLoading(false);
     },
-    [supabase, connectorTypes, onlyAvailable, query],
+    [supabase, connectorTypes, onlyAvailable, onlyOperable, query],
   );
 
   // Re-run whenever the origin or filters change. Skip the very first render
@@ -84,23 +105,65 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
       setLocateState('unsupported');
       return;
     }
+    // Geolocation is only available in a secure context. Reporting this
+    // explicitly beats a generic "denied", which is what the browser
+    // otherwise surfaces.
+    if (!window.isSecureContext) {
+      setLocateState('insecure');
+      return;
+    }
+
     setLocateState('locating');
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
         setLocateState('located');
       },
-      () => setLocateState('denied'),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+      (error) => {
+        // The error carries a code distinguishing three very different
+        // problems. Collapsing them all to "denied" (as this did) sends the
+        // user to reset a permission that was never the issue.
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocateState('denied');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocateState('unavailable');
+            break;
+          case error.TIMEOUT:
+            setLocateState('timeout');
+            break;
+          default:
+            setLocateState('unavailable');
+        }
+      },
+      // 8s is not enough for a desktop resolving position over Wi-Fi/IP.
+      { enableHighAccuracy: false, timeout: 20_000, maximumAge: 300_000 },
     );
   }, []);
 
-  // Attempt to locate once on mount; silently falls back to the default
-  // centre if the user denies or the browser doesn't support it.
+  // Only auto-locate if permission was ALREADY granted.
+  //
+  // Calling getCurrentPosition on mount triggers a permission prompt with no
+  // user gesture behind it. Chrome and Edge increasingly auto-block those,
+  // and a block is recorded as a persistent denial for the origin — after
+  // which the manual button silently fails forever, which is exactly the
+  // failure that looked like "use my location is not working".
   useEffect(() => {
-    locate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!('permissions' in navigator)) return;
+    let cancelled = false;
+    void navigator.permissions
+      .query({ name: 'geolocation' as PermissionName })
+      .then((status) => {
+        if (!cancelled && status.state === 'granted') locate();
+      })
+      .catch(() => {
+        /* Permissions API unsupported: wait for the button. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locate]);
 
   function toggleConnectorType(type: ConnectorType) {
     setConnectorTypes((current) =>
@@ -130,9 +193,9 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
         </button>
       </div>
 
-      {locateState === 'denied' && (
-        <p className="mt-1.5 text-xs text-[var(--text-muted)]">
-          Location access was declined — showing chargers near Hyderabad instead.
+      {locateState !== 'idle' && locateState !== 'locating' && locateState !== 'located' && (
+        <p role="status" className="mt-1.5 text-xs text-[var(--text-muted)]">
+          {LOCATE_MESSAGES[locateState]}
         </p>
       )}
 
@@ -179,6 +242,20 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
         >
           Available only
         </button>
+        <button
+          type="button"
+          aria-pressed={onlyOperable}
+          onClick={() => setOnlyOperable((v) => !v)}
+          title="Show only stations EVRute can start a charge on"
+          className={cn(
+            'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+            onlyOperable
+              ? 'border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]'
+              : 'border-[var(--border-strong)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]',
+          )}
+        >
+          EVRute chargers only
+        </button>
       </div>
 
       <div className="mt-4">
@@ -210,7 +287,7 @@ export function StationSearchClient({ initialStations, initialCenter }: Props) {
               </svg>
             }
             title="No chargers found nearby"
-            description="Try widening your filters, clearing the search text, or turning off 'available only'."
+            description="Try widening your filters, clearing the search text, or turning off 'available only' / 'EVRute chargers only'."
           />
         ) : (
           <ul className="space-y-3" aria-label="Nearby charging stations">

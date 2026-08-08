@@ -172,6 +172,31 @@ adds retries, a circuit breaker and structured logging. Today it binds to
 against the same interface and changing `CHARGING_PROVIDER` is the entire
 migration — no call site changes.
 
+### Imported stations are discovery-only
+
+A charging app with five stations is not useful, so `stations` also carries
+rows imported from open datasets (OpenChargeMap, OpenStreetMap, government
+feeds) to make the map worth opening before EVRute has its own network. Those
+stations belong to someone else — Statiq, Tata Power, ChargeMOD — and we have
+no roaming agreement or OCPI credentials with any of them, so a "Start
+charging" button on their hardware would be a promise we cannot keep.
+
+`stations.is_operable` is a generated column (`source = 'evrute'`, migration
+`0020`), not an application flag — no insert or update statement can set it,
+so no code path can mark an imported station bookable by mistake. The UI keys
+every primary action off it (map badges, station cards, the station detail
+page), but the UI is a courtesy, not the guarantee. The guarantee is
+`evr.assert_station_operable()`, called from `start_charging_session()`: it
+re-checks `source` in the database on every attempt and raises rather than
+starting a session on a station we do not run, regardless of what any client
+sent.
+
+Imported records also carry `data_attribution`, `network` and `source_url`.
+Displaying the attribution line and a link back to the source record on the
+station page is not a nice-to-have — it is a condition of the CC-BY-SA
+(OpenStreetMap) and ODbL licences the data is imported under, so it is always
+rendered, never hidden behind a toggle.
+
 ---
 
 ## Deployment

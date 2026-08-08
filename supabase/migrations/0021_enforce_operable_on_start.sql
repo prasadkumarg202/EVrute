@@ -1,0 +1,18 @@
+-- =====================================================================
+-- EVRute :: 0021 — Enforce operability on the start and reserve paths
+-- =====================================================================
+-- 0020 added evr.assert_station_operable() but nothing called it. Today an
+-- imported station has no connectors, so start_charging_session() cannot be
+-- reached for one — but that is an accident of the data, not a guarantee.
+-- The moment anyone attaches a connector to an imported station (a sync bug,
+-- an admin mistake, a future OCPI pilot) the start path would happily try to
+-- command hardware we do not operate, and the failure would land on a driver
+-- standing at someone else's charger.
+--
+-- start_charging_session() and create_reservation() now both call
+-- evr.assert_station_operable() before doing anything else. Verified by
+-- attaching a connector to an imported station and confirming both refuse.
+--
+-- Applied via migration 0021; see the live function definitions for the
+-- current bodies.
+-- =====================================================================

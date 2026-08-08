@@ -1,0 +1,13 @@
+-- =====================================================================
+-- EVRute :: 0020c — Fix slug generation for imported stations
+-- =====================================================================
+-- BUG: upsert_external_stations appended external_ref to the slug verbatim.
+-- OpenChargeMap refs are numeric so they passed, but OpenStreetMap refs look
+-- like "node/12345" — the slash violates stations_slug_check
+-- (^[a-z0-9]+(-[a-z0-9]+)*$), so an OSM import would have failed on its very
+-- first row. Sanitise the ref exactly as the name is sanitised, and skip a
+-- row whose ref reduces to nothing.
+--
+-- Applied via migration 0020c; see the live definition of
+-- public.upsert_external_stations for the current body.
+-- =====================================================================
