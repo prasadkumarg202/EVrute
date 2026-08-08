@@ -114,7 +114,7 @@ async function StationsTable({
 
   let query = supabase
     .from('stations')
-    .select('id, name, city, state, status, profiles(full_name)', { count: 'exact' })
+    .select('id, name, city, state, status, profiles!stations_owner_id_fkey(full_name)', { count: 'exact' })
     .order('created_at', { ascending: false });
 
   if (q) query = query.or(`name.ilike.%${q}%,city.ilike.%${q}%`);
